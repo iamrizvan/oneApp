@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:one_app/scoped_model/main_model.dart';
 
 import 'package:scoped_model/scoped_model.dart';
 
 import './price_tag.dart';
 import './address_tag.dart';
 import '../../model/product.dart';
-import '../../scoped_model/products.dart';
+import '../../scoped_model/product_model.dart';
 import '../ui_element/title_default.dart';
 
 class ProductCard extends StatelessWidget {
@@ -31,31 +32,30 @@ class ProductCard extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    return ButtonBar(
-      alignment: MainAxisAlignment.center,
-      children: <Widget>[
-        IconButton(
-          icon: Icon(Icons.info),
-          color: Theme.of(context).accentColor,
-          onPressed: () => Navigator.pushNamed<bool>(
-              context, '/product/' + productIndex.toString()),
-        ),
-        ScopedModelDescendant<ProductsModel>(
-          builder: (BuildContext context, Widget child, ProductsModel model) {
-            return IconButton(
-              icon: Icon(model.products[productIndex].isFavorite
-                  ? Icons.favorite
-                  : Icons.favorite_border),
-              color: Colors.red,
-              onPressed: () {
-                model.selectProduct(productIndex);
-                model.toggleProductFavoriteStatus();
-              },
-            );
-          },
-        ),
-      ],
-    );
+    return ScopedModelDescendant<MainModel>(
+        builder: (BuildContext context, Widget child, MainModel model) {
+      return ButtonBar(
+        alignment: MainAxisAlignment.center,
+        children: <Widget>[
+          IconButton(
+            icon: Icon(Icons.info),
+            color: Theme.of(context).accentColor,
+            onPressed: () => Navigator.pushNamed<bool>(
+                context, '/product/' + model.displayedProducts[productIndex].id.toString()),
+          ),
+          IconButton(
+            icon: Icon(model.displayedProducts[productIndex].isFavorite
+                ? Icons.favorite
+                : Icons.favorite_border),
+            color: Colors.red,
+            onPressed: () {
+              model.selectProduct(model.displayedProducts[productIndex].productId);
+              model.toggleProductFavoriteStatus();
+            },
+          ),
+        ],
+      );
+    });
   }
 
   @override
@@ -63,13 +63,16 @@ class ProductCard extends StatelessWidget {
     return Card(
       child: Column(
         children: <Widget>[
-          Image.asset(product.image),
+          FadeInImage(
+              image: NetworkImage(product.image),
+              height: 300.0,
+              fit: BoxFit.cover,
+              placeholder: AssetImage('assets/food.jpg')),
           _buildTitlePriceRow(),
           AddressTag('Union Square, San Francisco'),
           _buildActionButtons(context)
         ],
       ),
     );
-    ;
   }
 }
