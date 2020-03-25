@@ -120,15 +120,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
               SizedBox(
                 height: 10.0,
               ),
-              _buildSubmitButton(),
-              // GestureDetector(
-              //   onTap: _submitForm,
-              //   child: Container(
-              //     color: Colors.green,
-              //     padding: EdgeInsets.all(5.0),
-              //     child: Text('My Button'),
-              //   ),
-              // )
+              _buildSubmitButton()
             ],
           ),
         ),
@@ -151,7 +143,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
       ).then((bool success) {
         if (success) {
           print('Add Success');
-          Navigator.pushReplacementNamed(context, '/products');
+          Navigator.pushReplacementNamed(context, '/');
         } else {
           showDialog(
               context: context,
@@ -177,7 +169,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
       ).then((bool success) {
         if (success) {
           print('Update Success');
-          Navigator.pushReplacementNamed(context, '/products');
+          Navigator.pushReplacementNamed(context, '/');
         } else {
           showDialog(
               context: context,

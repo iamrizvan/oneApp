@@ -13,15 +13,12 @@ class ProductListPage extends StatefulWidget {
   }
 }
 
-
-class _ProductListPageState extends State<ProductListPage>
-{  
-@override
-initState()
-{
+class _ProductListPageState extends State<ProductListPage> {
+  @override
+  initState() {
     widget.model.fetchProducts();
     super.initState();
-}
+  }
 
   Widget _buildEditButton(BuildContext context, int index, MainModel model) {
     return IconButton(
@@ -46,11 +43,30 @@ initState()
         return ListView.builder(
           itemBuilder: (BuildContext context, int index) {
             return Dismissible(
-              key: Key(model.allProducts[index].productId),
+              key: Key(model.allProducts[index].id.toString()),
               onDismissed: (DismissDirection direction) {
                 if (direction == DismissDirection.endToStart) {
-                  model.selectProduct(model.allProducts[index].productId);
-                  model.deleteProduct();
+     //             _deleteProduct(model, index);
+                   model
+        .deleteProduct(model.allProducts[index].productId)
+        .then((bool success) {
+      if (success) {
+        Scaffold.of(context).showSnackBar(SnackBar(content: Text('Product deleted!')));
+      } else {
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                  title: Text('Something went wrong!'),
+                  content: Text('Please try again'),
+                  actions: <Widget>[
+                    FlatButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text('Okay'))
+                  ]);
+            });
+      }
+    });
                 } else if (direction == DismissDirection.startToEnd) {
                   print('Swiped start to end');
                 } else {
@@ -66,8 +82,8 @@ initState()
                           NetworkImage(model.allProducts[index].image),
                     ),
                     title: Text(model.allProducts[index].title),
-                    subtitle: Text(
-                        '\$${model.allProducts[index].price.toString()}'),
+                    subtitle:
+                        Text('\$${model.allProducts[index].price.toString()}'),
                     trailing: _buildEditButton(context, index, model),
                   ),
                   Divider()

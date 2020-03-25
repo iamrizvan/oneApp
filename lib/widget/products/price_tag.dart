@@ -8,9 +8,9 @@ class PriceTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.5),
+      padding: EdgeInsets.symmetric(horizontal: 7.0, vertical: 2.5),
       decoration: BoxDecoration(
-          color: Theme.of(context).accentColor,
+          color: Colors.green,
           borderRadius: BorderRadius.circular(5.0)),
       child: Text(
         '\$$price',

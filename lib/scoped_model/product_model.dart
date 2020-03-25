@@ -59,9 +59,10 @@ mixin ProductModel on ConnectedProductModel {
     });
   }
 
- List<Product> get allProduscts {
+  List<Product> get allProducts {
     return List.from(_products);
   }
+
   List<Product> get displayedProducts {
     if (_showFavorites) {
       return _products.where((Product product) => product.isFavorite).toList();
@@ -79,7 +80,7 @@ mixin ProductModel on ConnectedProductModel {
     }
     // return the product if selected id is matches.
     return _products.firstWhere((Product product) {
-      return product.id == _selectedProductId;
+      return product.productId == _selectedProductId;
     });
   }
 
@@ -148,7 +149,11 @@ mixin ProductModel on ConnectedProductModel {
   Future<bool> updateProduct(Product product) async {
     _isLoading = true;
     notifyListeners();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String key = prefs.getString(SH_PREF_KEY);
+    String userid = prefs.getString(SH_PREF_USER_ID);
     final Map<String, dynamic> productData = {
+      'userId': userid,
       'title': product.title,
       'description': product.description,
       'price': product.price.toString(),
@@ -156,22 +161,22 @@ mixin ProductModel on ConnectedProductModel {
           'https://img3.goodfon.com/wallpaper/nbig/7/b1/sweets-candy-chocolate-shokolad-konfety-sladkoe.jpg',
       'isFavorite': selectedProduct.isFavorite
     };
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String key = prefs.getString(SH_PREF_KEY);
-    http.put(_updateProductURL + '/${selectedProduct.id}',
+    http.Response response = await http.put(
+        _updateProductURL + '/${selectedProduct.productId}',
         body: json.encode(productData),
         headers: {
           "content-type": "application/json",
           "accept": "application/json",
           HttpHeaders.authorizationHeader: key
-        }).then((http.Response response) {
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        return false;
-      }
+        });
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
       final Map<String, dynamic> responseData = json.decode(response.body);
       print(responseData);
       final Product product = new Product(
           id: responseData['id'],
+          productId: responseData['productId'],
+          userId: responseData['userId'],
           title: responseData['title'],
           description: responseData['description'],
           price: double.parse(responseData['price']),
@@ -182,26 +187,45 @@ mixin ProductModel on ConnectedProductModel {
       _isLoading = false;
       notifyListeners();
       return true;
-    }).catchError((error) {
+    } else {
       return false;
-    });
+    }
   }
 
-  void deleteProduct() async {
-    http.Response response =
-        await http.delete(_deleteProductURL + "/" + _selectedProductId);
-        print(_deleteProductURL + "/" + _selectedProductId);
-    // if (response.statusCode == 200 || response.statusCode == 201) {
-    //   _products.removeAt(_selectedProductIndex);
-    //   _selectedProductId = null;
-    //   notifyListeners();
-    // }
+  Future<bool> deleteProduct(String productId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String key = prefs.getString(SH_PREF_KEY);
+    _selectedProductId = productId;
+    print(_deleteProductURL + "/" + _selectedProductId.toString());
+    try {
+      http.Response response = await http
+          .delete(_deleteProductURL + "/" + _selectedProductId, headers: {
+        "content-type": "application/json",
+        "accept": "application/json",
+        HttpHeaders.authorizationHeader: key
+      });
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _products.removeAt(_selectedProductIndex);
+        _selectedProductId = null;
+        return true;
+      } else {
+        _selectedProductId = null;
+        print("DELETE ::::::::   :::::::::: " + json.decode(response.body));
+        return false;
+      }
+    } catch (error) {
+      print("DELETE ::::::::   :::::::::: " + error.toString());
+      _selectedProductId = null;
+      return false;
+    }
   }
 
   Future<bool> toggleProductFavoriteStatus() async {
     final bool isCurrentlyFavorite = selectedProduct.isFavorite;
     final bool newFavoriteStatus = !isCurrentlyFavorite;
+
     final Map<String, dynamic> updatedProduct = {
+      'userId': selectedProduct.userId,
       'title': selectedProduct.title,
       'description': selectedProduct.description,
       'price': selectedProduct.price,
@@ -210,32 +234,41 @@ mixin ProductModel on ConnectedProductModel {
     };
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String key = prefs.getString(SH_PREF_KEY);
-    http.put(_updateProductURL + '/${selectedProduct.id}',
-        body: json.encode(updatedProduct),
-        headers: {
-          "content-type": "application/json",
-          "accept": "application/json",
-          HttpHeaders.authorizationHeader: key
-        }).then((http.Response response) {
-      if (response.statusCode != 200 && response.statusCode != 201) {
+    print('FAVORITE ::::   :::: ' +
+        _updateProductURL +
+        '/${selectedProduct.productId}');
+    try {
+      http.Response response = await http.put(
+          _updateProductURL + '/${selectedProduct.productId}',
+          body: json.encode(updatedProduct),
+          headers: {
+            "content-type": "application/json",
+            "accept": "application/json",
+            HttpHeaders.authorizationHeader: key
+          });
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        print(responseData);
+        final Product product = new Product(
+            id: responseData['id'],
+            productId: responseData['productId'],
+            userId: responseData['userId'],
+            title: responseData['title'],
+            description: responseData['description'],
+            price: double.parse(responseData['price']),
+            image: responseData['image'],
+            isFavorite: responseData['isFavorite']);
+        _products[_selectedProductIndex] = product;
+        _selectedProductId = null;
+        notifyListeners();
+        return true;
+      } else {
         return false;
       }
-      final Map<String, dynamic> responseData = json.decode(response.body);
-      print(responseData);
-      final Product product = new Product(
-          id: responseData['id'],
-          title: responseData['title'],
-          description: responseData['description'],
-          price: double.parse(responseData['price']),
-          image: responseData['image'],
-          isFavorite: responseData['isFavorite']);
-      _products[_selectedProductIndex] = product;
-      _selectedProductId = null;
-      notifyListeners();
-      return true;
-    }).catchError((error) {
+    } catch (error) {
+      print('FAVORITE ::::: ERROR :::' + error.toString());
       return false;
-    });
+    }
   }
 
   void selectProduct(String productId) {
@@ -251,7 +284,7 @@ mixin ProductModel on ConnectedProductModel {
 // get the index of selected product
   int get _selectedProductIndex {
     return _products.indexWhere((Product product) {
-      return product.id == _selectedProductId;
+      return product.productId == _selectedProductId;
     });
   }
 }
@@ -289,7 +322,7 @@ mixin UserModel on ConnectedProductModel {
         String _expiry_time = headerData['expiration_time'].toString();
         final DateTime now = DateTime.now();
         final DateTime expiryTime =
-        now.add(Duration(seconds: int.parse(_expiry_time)));
+            now.add(Duration(seconds: int.parse(_expiry_time)));
         setAuthTimeOut(int.parse(_expiry_time));
         _userSubject.add(true);
         final SharedPreferences prefs = await SharedPreferences.getInstance();

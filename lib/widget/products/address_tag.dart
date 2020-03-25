@@ -8,9 +8,9 @@ class AddressTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.5),
+      padding: EdgeInsets.symmetric(horizontal: 7.0, vertical: 2.5),
       decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey, width: 1.0),
+          border: Border.all(color: Colors.purpleAccent, width: 1.5),
           borderRadius: BorderRadius.circular(4.0)),
       child: Text(address),
     );
